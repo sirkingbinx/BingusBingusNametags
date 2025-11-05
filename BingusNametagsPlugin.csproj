@@ -11,6 +11,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Reference Include="0Harmony">
 		  <HintPath>$(BepInExAssemblyPath)\0Harmony.dll</HintPath>
 		</Reference>
