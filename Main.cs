@@ -1,7 +1,6 @@
 using BepInEx;
 using BingusNametags.Plugins;
 using GorillaNetworking;
-using Newtonsoft.Json;
 using Photon.Pun;
 using Photon.Realtime;
 using System.Collections.Generic;
@@ -10,6 +9,8 @@ using System.Net.Http;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 [BepInDependency("bingus.nametags", BepInDependency.DependencyFlags.HardDependency)]
 [BepInPlugin("bingus.grungus", "BingusBingusNametags", "1.0.0")]
@@ -58,27 +59,30 @@ public class NametagLoader : BaseUnityPlugin
     
     void Start()
     {
-        const string GorillaInfoURL = "https://raw.githubusercontent.com/HanSolo1000Falcon/GorillaInfo/main/";
-
-        PluginManager.AddPluginUpdate(UpdateNametag, 1.2f, true);      // color code, pid
-        PluginManager.AddPluginUpdate(UpdateModsNametag, 0.6f, true);      // color code, pid
+        const string dataURL = "https://raw.githubusercontent.com/sirkingbinx/BingusBingusNametags/refs/heads/master/data.yml";
 
         using (HttpClient httpClient = new HttpClient())
         {
-            HttpResponseMessage knownModsResponse = httpClient.GetAsync(GorillaInfoURL + "KnownMods.txt").Result;
+            HttpResponseMessage knownModsResponse = httpClient.GetAsync(dataURL).Result;
 
             knownModsResponse.EnsureSuccessStatusCode();
 
             using (Stream stream = knownModsResponse.Content.ReadAsStreamAsync().Result)
-            using (StreamReader reader = new StreamReader(stream))
-                mods = JsonConvert.DeserializeObject<Dictionary<string, string>>(reader.ReadToEnd());
+            using (StreamReader reader = new StreamReader(stream)) {
+                var ymldeconstructor = new DeserializerBuilder()
+                    .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                    .Build();
+                mods = deserializer.Deserialize<Dictionary<string, string>>(reader.ReadToEnd());
+            }
         }
 
         foreach (string prop in mods.Keys)
         {
-            mods[prop.ToLower()] = mods[prop];
-            mods.Remove(prop); // remove OG thing
+            mods[prop] = mods[prop].ToLower();
         }
+
+        PluginManager.AddPluginUpdate(UpdateNametag, 1.2f, true);      // color code, pid
+        PluginManager.AddPluginUpdate(UpdateModsNametag, 0.6f, true);      // color code, pid
 
         PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { ["bingus.bingus.nametags"] = Info.Metadata.Version });
     }
