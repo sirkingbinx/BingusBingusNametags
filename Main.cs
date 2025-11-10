@@ -1,82 +1,39 @@
+using System.Text;
 using BepInEx;
 using BingusNametags.Plugins;
-using GorillaNetworking;
-using Newtonsoft.Json;
-using Photon.Pun;
-using Photon.Realtime;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
-using System.Text;
-using TMPro;
 using UnityEngine;
 
-[BepInDependency("bingus.nametags", BepInDependency.DependencyFlags.HardDependency)]
-[BepInPlugin("bingus.grungus", "BingusBingusNametags", "1.0.0")]
-public class NametagLoader : BaseUnityPlugin
+namespace BingusBingusTags
 {
-    public static Dictionary<string, string> mods = new Dictionary<string, string>();
-
-    static void UpdateNametag(TextMeshPro tmpro, VRRig playerRig)
+    [BepInDependency("bingus.nametags")]
+    [BepInPlugin("bingus.bingus.nametags", "BingusBingusNametags", "1.0.0")]
+    public class NametagInit : BaseUnityPlugin
     {
-        StringBuilder s = new StringBuilder();
-
-        // Color code (square with the color, and then color code itself)
-        int r = Mathf.RoundToInt(playerRig.playerColor.r * 9);
-        int g = Mathf.RoundToInt(playerRig.playerColor.g * 9);
-        int b = Mathf.RoundToInt(playerRig.playerColor.b * 9);
-
-        s.Append($"<color=#{ColorUtility.ToHtmlStringRGB(playerRig.playerColor)}>██ </color>");
-        s.Append($"<color=red>{r}</color>");
-        s.Append($"<color=green>{g}</color>");
-        s.Append($"<color=blue>{b}</color>");
-
-        // other BGNametagsUser
-        if (playerRig.OwningNetPlayer.GetPlayerRef().CustomProperties.TryGetValue("bingus.nametags", out object ver_og))
-            s.Append(" BINTAGS");
-
-        // other BBNametags User
-        if (playerRig.OwningNetPlayer.GetPlayerRef().CustomProperties.TryGetValue("bingus.bingus.nametags", out object ver_plugin))
-            s.Append(" BINGUS++");
-
-        // playerId
-        s.Append($"  {playerRig.OwningNetPlayer.UserId.Substring(0, 5)}<color=grey>..</color>");
-
-        tmpro.text = s.ToString();
+        private void Start() => Debug.Log("hi");
     }
 
-    static void UpdateModsNametag(TextMeshPro tmpro, VRRig rig)
+    [BingusNametagsPlugin("ColorCode_PID", 1.2f)]
+    public class ColorCodePid : INametag
     {
-        StringBuilder nametag = new StringBuilder();
-
-        foreach (string prop in rig.OwningNetPlayer.GetPlayerRef().CustomProperties.Keys)
-            if (mods.TryGetValue(prop.ToLower(), out string realModName))
-                nametag.Append($"[{realModName}]");
-
-        tmpro.text = nametag.ToString();
-    }
-    
-    void Start()
-    {
-        const string GorillaInfoURL = "https://raw.githubusercontent.com/HanSolo1000Falcon/GorillaInfo/main/";
-
-        PluginManager.AddPluginUpdate(UpdateNametag, 1.2f, true);      // color code, pid
-        PluginManager.AddPluginUpdate(UpdateModsNametag, 0.6f, true);      // color code, pid
-
-        using (HttpClient httpClient = new HttpClient())
+        public bool Enabled { get; set; } = true;
+        public string Update(VRRig owner)
         {
-            HttpResponseMessage knownModsResponse = httpClient.GetAsync(GorillaInfoURL + "KnownMods.txt").Result;
+            var s = new StringBuilder();
 
-            knownModsResponse.EnsureSuccessStatusCode();
+            // Color code (square with the color, and then color code itself)
+            var r = Mathf.RoundToInt(owner.playerColor.r * 9);
+            var g = Mathf.RoundToInt(owner.playerColor.g * 9);
+            var b = Mathf.RoundToInt(owner.playerColor.b * 9);
 
-            using (Stream stream = knownModsResponse.Content.ReadAsStreamAsync().Result)
-            using (StreamReader reader = new StreamReader(stream))
-                mods = JsonConvert.DeserializeObject<Dictionary<string, string>>(reader.ReadToEnd());
+            s.Append($"<color=#{ColorUtility.ToHtmlStringRGB(owner.playerColor)}>██ </color>");
+            s.Append($"<color=red>{r}</color>");
+            s.Append($"<color=green>{g}</color>");
+            s.Append($"<color=blue>{b}</color>");
+            
+            // playerId
+            s.Append($"  {owner.OwningNetPlayer.UserId.Substring(0, 5)}<color=grey>..</color>");
+
+            return s.ToString();
         }
-
-        foreach (string prop in mods.Keys)
-            mods[prop.ToLower()] = mods[prop];
-
-        PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { ["bingus.bingus.nametags"] = Info.Metadata.Version });
     }
 }
