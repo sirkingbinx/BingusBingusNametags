@@ -11,6 +11,4 @@ The tags are organized like this. (note: all text encased in angle brackets `<>`
      < player name >
          SteamVR
        < platform >
-   [Mod1] [Mod2] [Mod3]
-< list of mods (prop checker) >
 ```
